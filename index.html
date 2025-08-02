@@ -18,20 +18,32 @@
             <p class="text-gray-600">中学1年生 夏休み面談</p>
         </div>
 
-        <!-- 管理者/保護者切り替えタブ -->
-        <div class="bg-white rounded-lg shadow-lg mb-6">
-            <div class="flex border-b">
-                <button id="teacherTab" class="flex-1 py-4 px-6 text-center font-medium bg-blue-500 text-white rounded-tl-lg transition-colors">
-                    担任設定
+        <!-- 管理者ログインボタン -->
+        <div class="text-center mb-6">
+            <div id="adminLoginSection">
+                <button type="button" onclick="showPasswordPrompt()" class="px-6 py-2 bg-gray-600 text-white rounded-lg font-medium hover:bg-gray-700 transition-colors text-sm cursor-pointer">
+                    管理者ログイン
                 </button>
-                <button id="parentTab" class="flex-1 py-4 px-6 text-center font-medium text-gray-600 hover:bg-gray-50 rounded-tr-lg transition-colors">
-                    保護者申込
-                </button>
+            </div>
+            <div id="adminLoggedInSection" class="hidden">
+                <div class="inline-flex bg-white rounded-lg shadow-lg p-1">
+                    <button id="parentModeBtn" class="px-6 py-3 bg-blue-500 text-white rounded-lg font-medium transition-colors">
+                        保護者申込画面
+                    </button>
+                    <button id="adminModeBtn" class="px-6 py-3 text-gray-600 hover:bg-gray-50 rounded-lg font-medium transition-colors">
+                        管理者画面
+                    </button>
+                </div>
+                <div class="mt-2">
+                    <button onclick="logout()" class="px-4 py-1 bg-red-500 text-white rounded text-sm hover:bg-red-600 transition-colors">
+                        ログアウト
+                    </button>
+                </div>
             </div>
         </div>
 
         <!-- 担任設定画面 -->
-        <div id="teacherPanel" class="bg-white rounded-lg shadow-lg p-6">
+        <div id="teacherPanel" class="bg-white rounded-lg shadow-lg p-6 hidden">
             <h2 class="text-xl font-semibold text-gray-800 mb-6">面談設定</h2>
             
             <!-- フォーム情報設定 -->
@@ -148,7 +160,7 @@
         </div>
 
         <!-- 保護者申込画面 -->
-        <div id="parentPanel" class="bg-white rounded-lg shadow-lg p-6 hidden">
+        <div id="parentPanel" class="bg-white rounded-lg shadow-lg p-6">
             <div id="parentForm">
                 <h2 id="displayTitle" class="text-xl font-semibold text-gray-800 mb-4">夏休み保護者面談 日程調整</h2>
                 <p id="displayDescription" class="text-gray-600 mb-6">お忙しい中恐れ入りますが、夏休み期間中の保護者面談の日程調整をお願いいたします。第1～第3希望までご選択ください。</p>
@@ -249,32 +261,64 @@
         let availableTimeSlots = [];
         let applications = [];
         let currentApplication = null;
+        let isAdminLoggedIn = false;
+        const ADMIN_PASSWORD = 'hongo-okubo';
 
-        // タブ切り替え
-        document.getElementById('teacherTab').addEventListener('click', function() {
-            showTeacherPanel();
-        });
-
-        document.getElementById('parentTab').addEventListener('click', function() {
-            showParentPanel();
-        });
-
-        function showTeacherPanel() {
-            document.getElementById('teacherPanel').classList.remove('hidden');
-            document.getElementById('parentPanel').classList.add('hidden');
-            document.getElementById('teacherTab').classList.add('bg-blue-500', 'text-white');
-            document.getElementById('teacherTab').classList.remove('text-gray-600');
-            document.getElementById('parentTab').classList.remove('bg-blue-500', 'text-white');
-            document.getElementById('parentTab').classList.add('text-gray-600');
+        // パスワード認証
+        function showPasswordPrompt() {
+            const password = prompt('管理者パスワードを入力してください:');
+            if (password === ADMIN_PASSWORD) {
+                isAdminLoggedIn = true;
+                showAdminInterface();
+                alert('管理者としてログインしました');
+            } else if (password !== null) {
+                alert('パスワードが間違っています');
+            }
         }
 
-        function showParentPanel() {
+        function showAdminInterface() {
+            document.getElementById('adminLoginSection').classList.add('hidden');
+            document.getElementById('adminLoggedInSection').classList.remove('hidden');
+            
+            // イベントリスナーを追加
+            document.getElementById('parentModeBtn').addEventListener('click', function() {
+                showParentMode();
+            });
+
+            document.getElementById('adminModeBtn').addEventListener('click', function() {
+                showAdminMode();
+            });
+        }
+
+        function logout() {
+            isAdminLoggedIn = false;
+            document.getElementById('adminLoginSection').classList.remove('hidden');
+            document.getElementById('adminLoggedInSection').classList.add('hidden');
+            showParentMode(); // 保護者画面に戻る
+            alert('ログアウトしました');
+        }
+
+        function showParentMode() {
             document.getElementById('teacherPanel').classList.add('hidden');
             document.getElementById('parentPanel').classList.remove('hidden');
-            document.getElementById('parentTab').classList.add('bg-blue-500', 'text-white');
-            document.getElementById('parentTab').classList.remove('text-gray-600');
-            document.getElementById('teacherTab').classList.remove('bg-blue-500', 'text-white');
-            document.getElementById('teacherTab').classList.add('text-gray-600');
+            document.getElementById('parentModeBtn').classList.add('bg-blue-500', 'text-white');
+            document.getElementById('parentModeBtn').classList.remove('text-gray-600');
+            document.getElementById('adminModeBtn').classList.remove('bg-blue-500', 'text-white');
+            document.getElementById('adminModeBtn').classList.add('text-gray-600');
+        }
+
+        function showAdminMode() {
+            if (!isAdminLoggedIn) {
+                alert('管理者権限が必要です');
+                return;
+            }
+            
+            document.getElementById('teacherPanel').classList.remove('hidden');
+            document.getElementById('parentPanel').classList.add('hidden');
+            document.getElementById('adminModeBtn').classList.add('bg-blue-500', 'text-white');
+            document.getElementById('adminModeBtn').classList.remove('text-gray-600');
+            document.getElementById('parentModeBtn').classList.remove('bg-blue-500', 'text-white');
+            document.getElementById('parentModeBtn').classList.add('text-gray-600');
         }
 
         // 時間枠追加
@@ -362,7 +406,7 @@
             updateTeacherScheduleTable();
             updateConsultationList();
             
-            showParentPanel();
+            showParentMode();
             
             alert('保護者用フォームが生成されました！「保護者申込」タブで確認できます。');
         }
@@ -760,5 +804,5 @@
             console.log('面談日程調整システムが初期化されました');
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'968a9d7d8768e029',t:'MTc1NDEwNjY3MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'968acc63d4aed51b',t:'MTc1NDEwODU5MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
