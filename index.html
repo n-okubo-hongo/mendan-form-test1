@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>保護者面談 日程調整システム</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Noto Sans JP', sans-serif; }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+        <!-- ヘッダー -->
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">保護者面談 日程調整システム</h1>
+            <p class="text-gray-600">中学1年生 夏休み面談</p>
+        </div>
+
+        <!-- 管理者/保護者切り替えタブ -->
+        <div class="bg-white rounded-lg shadow-lg mb-6">
+            <div class="flex border-b">
+                <button id="teacherTab" class="flex-1 py-4 px-6 text-center font-medium bg-blue-500 text-white rounded-tl-lg transition-colors">
+                    担任設定
+                </button>
+                <button id="parentTab" class="flex-1 py-4 px-6 text-center font-medium text-gray-600 hover:bg-gray-50 rounded-tr-lg transition-colors">
+                    保護者申込
+                </button>
+            </div>
+        </div>
+
+        <!-- 担任設定画面 -->
+        <div id="teacherPanel" class="bg-white rounded-lg shadow-lg p-6">
+            <h2 class="text-xl font-semibold text-gray-800 mb-6">面談設定</h2>
+            
+            <!-- フォーム情報設定 -->
+            <div class="mb-8">
+                <h3 class="text-lg font-medium text-gray-700 mb-4">フォーム情報</h3>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">タイトル</label>
+                        <input type="text" id="formTitle" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                               value="夏休み保護者面談 日程調整" placeholder="面談のタイトルを入力">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">説明文</label>
+                        <textarea id="formDescription" rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                                  placeholder="保護者向けの説明文を入力">お忙しい中恐れ入りますが、夏休み期間中の保護者面談の日程調整をお願いいたします。第1～第3希望までご選択ください。</textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 面談日程設定 -->
+            <div class="mb-6">
+                <h3 class="text-lg font-medium text-gray-700 mb-4">面談可能日時設定</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">日付</label>
+                        <input type="date" id="meetingDate" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">時間帯</label>
+                        <select id="timeSlot" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <option value="09:00-09:30">09:00～09:30</option>
+                            <option value="09:30-10:00">09:30～10:00</option>
+                            <option value="10:00-10:30">10:00～10:30</option>
+                            <option value="10:30-11:00">10:30～11:00</option>
+                            <option value="11:00-11:30">11:00～11:30</option>
+                            <option value="11:30-12:00">11:30～12:00</option>
+                            <option value="13:00-13:30">13:00～13:30</option>
+                            <option value="13:30-14:00">13:30～14:00</option>
+                            <option value="14:00-14:30">14:00～14:30</option>
+                            <option value="14:30-15:00">14:30～15:00</option>
+                            <option value="15:00-15:30">15:00～15:30</option>
+                            <option value="15:30-16:00">15:30～16:00</option>
+                            <option value="16:00-16:30">16:00～16:30</option>
+                            <option value="16:30-17:00">16:30～17:00</option>
+                        </select>
+                    </div>
+                </div>
+                <button onclick="addTimeSlot()" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-medium transition-colors">
+                    時間枠を追加
+                </button>
+            </div>
+
+            <!-- 設定済み時間枠一覧 -->
+            <div class="mb-6">
+                <h3 class="text-lg font-medium text-gray-700 mb-4">設定済み面談枠</h3>
+                <div id="timeSlotsList" class="space-y-2 min-h-[100px] bg-gray-50 rounded-lg p-4">
+                    <p class="text-gray-500 text-center">まだ面談枠が設定されていません</p>
+                </div>
+            </div>
+
+            <button onclick="generateForm()" class="w-full bg-green-500 hover:bg-green-600 text-white py-3 px-6 rounded-lg font-medium text-lg transition-colors">
+                保護者用フォームを生成
+            </button>
+
+            <!-- 申込一覧・相談内容確認 -->
+            <div id="applicationsSection" class="mt-8 hidden">
+                <div class="border-t pt-8">
+                    <h3 class="text-lg font-medium text-gray-700 mb-4">申込状況確認</h3>
+                    <div class="flex flex-wrap gap-4 mb-6">
+                        <button onclick="showScheduleView()" id="scheduleViewBtn" class="px-4 py-2 bg-blue-500 text-white rounded-lg font-medium transition-colors">
+                            申込一覧
+                        </button>
+                        <button onclick="showConsultationView()" id="consultationViewBtn" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition-colors">
+                            相談内容一覧
+                        </button>
+                    </div>
+
+                    <!-- 申込一覧（担任専用） -->
+                    <div id="teacherScheduleTable" class="bg-gray-50 rounded-lg p-4">
+                        <h4 class="font-semibold text-gray-800 mb-4">申込一覧</h4>
+                        <div class="overflow-x-auto">
+                            <table class="w-full border-collapse border border-gray-300 bg-white">
+                                <thead>
+                                    <tr class="bg-gray-50">
+                                        <th class="border border-gray-300 px-4 py-3 text-left font-medium text-gray-700">日時</th>
+                                        <th class="border border-gray-300 px-4 py-3 text-left font-medium text-gray-700">生徒名</th>
+                                        <th class="border border-gray-300 px-4 py-3 text-left font-medium text-gray-700">保護者名</th>
+                                        <th class="border border-gray-300 px-4 py-3 text-left font-medium text-gray-700">面談形式</th>
+                                        <th class="border border-gray-300 px-4 py-3 text-left font-medium text-gray-700">希望順位</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="teacherScheduleTableBody">
+                                    <tr>
+                                        <td colspan="5" class="border border-gray-300 px-4 py-8 text-center text-gray-500">
+                                            まだ申込がありません
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- 相談内容一覧 -->
+                    <div id="consultationList" class="bg-gray-50 rounded-lg p-4 hidden">
+                        <h4 class="font-semibold text-gray-800 mb-4">相談内容・連絡事項一覧</h4>
+                        <div id="consultationContent" class="space-y-4">
+                            <p class="text-gray-500 text-center py-8">まだ相談内容の記載がある申込がありません</p>
+                        </div>
+                    </div>
+
+
+                </div>
+            </div>
+        </div>
+
+        <!-- 保護者申込画面 -->
+        <div id="parentPanel" class="bg-white rounded-lg shadow-lg p-6 hidden">
+            <div id="parentForm">
+                <h2 id="displayTitle" class="text-xl font-semibold text-gray-800 mb-4">夏休み保護者面談 日程調整</h2>
+                <p id="displayDescription" class="text-gray-600 mb-6">お忙しい中恐れ入りますが、夏休み期間中の保護者面談の日程調整をお願いいたします。第1～第3希望までご選択ください。</p>
+
+                <!-- 保護者情報入力 -->
+                <div class="mb-6">
+                    <h3 class="text-lg font-medium text-gray-700 mb-4">保護者情報</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">生徒氏名</label>
+                            <input type="text" id="studentName" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="山田太郎">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">保護者氏名</label>
+                            <input type="text" id="parentName" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="山田花子">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 希望日程選択 -->
+                <div class="mb-6">
+                    <h3 class="text-lg font-medium text-gray-700 mb-4">希望日程選択</h3>
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                        <h4 class="font-medium text-blue-800 mb-2">選択ルール</h4>
+                        <ul class="text-sm text-blue-700 space-y-1">
+                            <li>• 第1希望は必須です</li>
+                            <li>• 第2・第3希望は任意です</li>
+                            <li>• 各希望順位は1つずつしか選択できません</li>
+                            <li>• 最大3つまで選択可能です</li>
+                            <li>• 同じ選択肢をもう一度押すと選択解除できます</li>
+                        </ul>
+                    </div>
+                    <div id="preferenceError" class="hidden bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+                        <p class="text-red-700 text-sm font-medium"></p>
+                    </div>
+                    <div id="availableSlots" class="space-y-3">
+                        <p class="text-gray-500 text-center py-8">担任の先生が面談枠を設定するまでお待ちください</p>
+                    </div>
+                    
+                    <!-- その他の日程 -->
+                    <div class="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                        <h4 class="font-medium text-yellow-800 mb-3">その他の日程</h4>
+                        <p class="text-sm text-yellow-700 mb-3">上記の候補日で都合がつかない場合は、こちらにご希望の日時をご記入ください</p>
+                        <textarea id="otherSchedule" rows="3" class="w-full px-4 py-2 border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent bg-white" 
+                                  placeholder="例：8月15日（火）午前中、8月20日（日）14:00以降など"></textarea>
+                    </div>
+                </div>
+
+                <!-- 三者面談希望 -->
+                <div class="mb-6">
+                    <label class="flex items-center space-x-3 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                        <input type="checkbox" id="threeWayMeeting" class="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                        <span class="text-gray-700 font-medium">三者面談を希望する（生徒も同席）</span>
+                    </label>
+                </div>
+
+                <!-- 連絡事項 -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">連絡事項・ご質問（任意）</label>
+                    <textarea id="comments" rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                              placeholder="面談で特に相談したいことや、ご質問がございましたらご記入ください"></textarea>
+                </div>
+
+                <div class="flex space-x-4">
+                    <button onclick="submitApplication()" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-3 px-6 rounded-lg font-medium transition-colors">
+                        申込を送信
+                    </button>
+                    <button onclick="showEditForm()" class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors">
+                        申込内容を修正
+                    </button>
+                </div>
+            </div>
+
+            <!-- 申込完了画面 -->
+            <div id="confirmationScreen" class="hidden text-center">
+                <div class="bg-green-50 border border-green-200 rounded-lg p-6 mb-6">
+                    <div class="text-green-600 text-5xl mb-4">✓</div>
+                    <h3 class="text-xl font-semibold text-green-800 mb-2">申込完了</h3>
+                    <p class="text-green-700">面談の申込が完了いたしました。</p>
+                </div>
+                <div id="submittedInfo" class="bg-gray-50 rounded-lg p-6 mb-6 text-left">
+                    <!-- 申込内容がここに表示される -->
+                </div>
+                <div class="flex space-x-4 justify-center">
+                    <button onclick="editApplication()" class="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-2 rounded-lg font-medium transition-colors">
+                        申込内容を修正
+                    </button>
+                    <button onclick="resetForm()" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg font-medium transition-colors">
+                        新規申込
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // データ保存用
+        let availableTimeSlots = [];
+        let applications = [];
+        let currentApplication = null;
+
+        // タブ切り替え
+        document.getElementById('teacherTab').addEventListener('click', function() {
+            showTeacherPanel();
+        });
+
+        document.getElementById('parentTab').addEventListener('click', function() {
+            showParentPanel();
+        });
+
+        function showTeacherPanel() {
+            document.getElementById('teacherPanel').classList.remove('hidden');
+            document.getElementById('parentPanel').classList.add('hidden');
+            document.getElementById('teacherTab').classList.add('bg-blue-500', 'text-white');
+            document.getElementById('teacherTab').classList.remove('text-gray-600');
+            document.getElementById('parentTab').classList.remove('bg-blue-500', 'text-white');
+            document.getElementById('parentTab').classList.add('text-gray-600');
+        }
+
+        function showParentPanel() {
+            document.getElementById('teacherPanel').classList.add('hidden');
+            document.getElementById('parentPanel').classList.remove('hidden');
+            document.getElementById('parentTab').classList.add('bg-blue-500', 'text-white');
+            document.getElementById('parentTab').classList.remove('text-gray-600');
+            document.getElementById('teacherTab').classList.remove('bg-blue-500', 'text-white');
+            document.getElementById('teacherTab').classList.add('text-gray-600');
+        }
+
+        // 時間枠追加
+        function addTimeSlot() {
+            const date = document.getElementById('meetingDate').value;
+            const time = document.getElementById('timeSlot').value;
+            
+            if (!date) {
+                alert('日付を選択してください');
+                return;
+            }
+
+            const dateObj = new Date(date + 'T00:00:00'); // タイムゾーンの問題を回避
+            const dateStr = `${dateObj.getMonth() + 1}月${dateObj.getDate()}日`;
+            const slotId = `${date}_${time}`;
+            
+            // 重複チェック
+            if (availableTimeSlots.find(slot => slot.id === slotId)) {
+                alert('この時間枠は既に追加されています');
+                return;
+            }
+
+            const slot = {
+                id: slotId,
+                date: date,
+                dateStr: dateStr,
+                time: time,
+                timeStr: time.replace('-', '～')
+            };
+
+            availableTimeSlots.push(slot);
+            updateTimeSlotsList();
+            
+            // 時間帯のみリセット（日付は保持）
+            document.getElementById('timeSlot').selectedIndex = 0;
+        }
+
+        // 時間枠一覧更新
+        function updateTimeSlotsList() {
+            const container = document.getElementById('timeSlotsList');
+            
+            if (availableTimeSlots.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center">まだ面談枠が設定されていません</p>';
+                return;
+            }
+
+            // 日付順にソート
+            availableTimeSlots.sort((a, b) => {
+                if (a.date !== b.date) return a.date.localeCompare(b.date);
+                return a.time.localeCompare(b.time);
+            });
+
+            container.innerHTML = availableTimeSlots.map(slot => `
+                <div class="flex justify-between items-center bg-white p-3 rounded border">
+                    <span class="font-medium">${slot.dateStr} ${slot.timeStr}</span>
+                    <button onclick="removeTimeSlot('${slot.id}')" class="text-red-500 hover:text-red-700 font-medium">削除</button>
+                </div>
+            `).join('');
+        }
+
+        // 時間枠削除
+        function removeTimeSlot(slotId) {
+            availableTimeSlots = availableTimeSlots.filter(slot => slot.id !== slotId);
+            updateTimeSlotsList();
+            updateAvailableSlots();
+        }
+
+        // 保護者用フォーム生成
+        function generateForm() {
+            const title = document.getElementById('formTitle').value;
+            const description = document.getElementById('formDescription').value;
+
+            if (availableTimeSlots.length === 0) {
+                alert('面談可能な時間枠を設定してください');
+                return;
+            }
+
+            document.getElementById('displayTitle').textContent = title;
+            document.getElementById('displayDescription').textContent = description;
+            
+            updateAvailableSlots();
+            
+            // 担任用の申込状況確認セクションを表示
+            document.getElementById('applicationsSection').classList.remove('hidden');
+            updateTeacherScheduleTable();
+            updateConsultationList();
+            
+            showParentPanel();
+            
+            alert('保護者用フォームが生成されました！「保護者申込」タブで確認できます。');
+        }
+
+        // 担任用ビュー切り替え
+        function showScheduleView() {
+            document.getElementById('teacherScheduleTable').classList.remove('hidden');
+            document.getElementById('consultationList').classList.add('hidden');
+            document.getElementById('finalScheduleView').classList.add('hidden');
+            
+            document.getElementById('scheduleViewBtn').classList.add('bg-blue-500', 'text-white');
+            document.getElementById('scheduleViewBtn').classList.remove('bg-gray-200', 'text-gray-700');
+            document.getElementById('consultationViewBtn').classList.remove('bg-blue-500', 'text-white');
+            document.getElementById('consultationViewBtn').classList.add('bg-gray-200', 'text-gray-700');
+        }
+
+        function showConsultationView() {
+            document.getElementById('teacherScheduleTable').classList.add('hidden');
+            document.getElementById('consultationList').classList.remove('hidden');
+            
+            document.getElementById('consultationViewBtn').classList.add('bg-blue-500', 'text-white');
+            document.getElementById('consultationViewBtn').classList.remove('bg-gray-200', 'text-gray-700');
+            document.getElementById('scheduleViewBtn').classList.remove('bg-blue-500', 'text-white');
+            document.getElementById('scheduleViewBtn').classList.add('bg-gray-200', 'text-gray-700');
+        }
+
+
+
+        // 利用可能時間枠更新
+        function updateAvailableSlots() {
+            const container = document.getElementById('availableSlots');
+            
+            if (availableTimeSlots.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center py-8">担任の先生が面談枠を設定するまでお待ちください</p>';
+                return;
+            }
+
+            container.innerHTML = availableTimeSlots.map(slot => `
+                <div class="border border-gray-200 rounded-lg p-4">
+                    <div class="font-medium text-gray-800 mb-3">${slot.dateStr} ${slot.timeStr}</div>
+                    <div class="space-y-2">
+                        <label class="flex items-center space-x-2 cursor-pointer">
+                            <input type="radio" name="preference_${slot.id}" value="1" class="text-blue-600" onclick="handlePreferenceClick(this, '${slot.id}', 1)">
+                            <span class="text-sm text-gray-700">第1希望</span>
+                        </label>
+                        <label class="flex items-center space-x-2 cursor-pointer">
+                            <input type="radio" name="preference_${slot.id}" value="2" class="text-blue-600" onclick="handlePreferenceClick(this, '${slot.id}', 2)">
+                            <span class="text-sm text-gray-700">第2希望</span>
+                        </label>
+                        <label class="flex items-center space-x-2 cursor-pointer">
+                            <input type="radio" name="preference_${slot.id}" value="3" class="text-blue-600" onclick="handlePreferenceClick(this, '${slot.id}', 3)">
+                            <span class="text-sm text-gray-700">第3希望</span>
+                        </label>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 希望選択処理
+        function handlePreferenceClick(clickedRadio, slotId, preference) {
+            // 既に選択されている場合は解除
+            if (clickedRadio.checked && clickedRadio.dataset.wasChecked === 'true') {
+                clickedRadio.checked = false;
+                clickedRadio.dataset.wasChecked = 'false';
+                clearPreferenceError();
+                return;
+            }
+
+            // 同じ希望順位が他で選択されているかチェック
+            const existingPreference = document.querySelector(`input[value="${preference}"]:checked:not([name="preference_${slotId}"])`);
+            if (existingPreference) {
+                clickedRadio.checked = false;
+                showPreferenceError(`第${preference}希望は既に他の日程で選択されています。各希望順位は1つずつしか選択できません。`);
+                return;
+            }
+
+            // 選択状態を記録
+            clickedRadio.dataset.wasChecked = 'true';
+            
+            // 同じスロット内の他の選択肢をクリア
+            document.querySelectorAll(`input[name="preference_${slotId}"]`).forEach(radio => {
+                if (radio !== clickedRadio) {
+                    radio.dataset.wasChecked = 'false';
+                }
+            });
+
+            clearPreferenceError();
+        }
+
+        // エラーメッセージ表示
+        function showPreferenceError(message) {
+            const errorDiv = document.getElementById('preferenceError');
+            const errorText = errorDiv.querySelector('p');
+            errorText.textContent = message;
+            errorDiv.classList.remove('hidden');
+        }
+
+        // エラーメッセージクリア
+        function clearPreferenceError() {
+            const errorDiv = document.getElementById('preferenceError');
+            errorDiv.classList.add('hidden');
+        }
+
+        // 申込送信
+        function submitApplication() {
+            // エラーメッセージをクリア
+            clearPreferenceError();
+            
+            const studentName = document.getElementById('studentName').value;
+            const parentName = document.getElementById('parentName').value;
+            const threeWayMeeting = document.getElementById('threeWayMeeting').checked;
+            const comments = document.getElementById('comments').value;
+            const otherSchedule = document.getElementById('otherSchedule').value;
+
+            if (!studentName || !parentName) {
+                showPreferenceError('生徒氏名と保護者氏名を入力してください');
+                return;
+            }
+
+            // 希望日程収集と厳密なバリデーション
+            const preferences = [];
+            const selectedPreferences = new Set();
+            let hasError = false;
+            
+            availableTimeSlots.forEach(slot => {
+                const radios = document.querySelectorAll(`input[name="preference_${slot.id}"]:checked`);
+                if (radios.length > 0) {
+                    const prefValue = parseInt(radios[0].value);
+                    
+                    // 重複チェック
+                    if (selectedPreferences.has(prefValue)) {
+                        showPreferenceError(`第${prefValue}希望が重複しています。各希望順位は1つずつ選択してください。`);
+                        hasError = true;
+                        return;
+                    }
+                    
+                    selectedPreferences.add(prefValue);
+                    preferences.push({
+                        slotId: slot.id,
+                        slot: slot,
+                        preference: prefValue
+                    });
+                }
+            });
+
+            if (hasError) {
+                return;
+            }
+
+            // 第1希望が必須（その他の日程がある場合は除く）
+            if (preferences.length === 0 && !otherSchedule.trim()) {
+                showPreferenceError('第1希望の日程を選択するか、その他の日程をご記入ください');
+                return;
+            }
+
+            if (preferences.length > 0 && !preferences.find(p => p.preference === 1)) {
+                showPreferenceError('第1希望は必須です');
+                return;
+            }
+
+            // 希望順位の連続性チェック（第2希望があるのに第1希望がない等）
+            const sortedPrefs = preferences.map(p => p.preference).sort();
+            for (let i = 0; i < sortedPrefs.length; i++) {
+                if (sortedPrefs[i] !== i + 1) {
+                    showPreferenceError('希望順位は第1希望から順番に選択してください（第1希望なしで第2希望のみ選択はできません）');
+                    return;
+                }
+            }
+
+            const application = {
+                id: Date.now(),
+                studentName,
+                parentName,
+                threeWayMeeting,
+                comments,
+                otherSchedule,
+                preferences: preferences.sort((a, b) => a.preference - b.preference),
+                submittedAt: new Date()
+            };
+
+            // 既存申込の更新または新規追加
+            if (currentApplication) {
+                const index = applications.findIndex(app => app.id === currentApplication.id);
+                if (index !== -1) {
+                    applications[index] = application;
+                    application.id = currentApplication.id;
+                }
+            } else {
+                applications.push(application);
+            }
+
+            currentApplication = application;
+            showConfirmation(application);
+            updateTeacherScheduleTable();
+            updateConsultationList();
+        }
+
+        // 確認画面表示
+        function showConfirmation(application) {
+            document.getElementById('parentForm').classList.add('hidden');
+            document.getElementById('confirmationScreen').classList.remove('hidden');
+
+            const infoContainer = document.getElementById('submittedInfo');
+            infoContainer.innerHTML = `
+                <h4 class="font-semibold text-gray-800 mb-3">申込内容</h4>
+                <div class="space-y-2 text-sm">
+                    <p><span class="font-medium">生徒氏名:</span> ${application.studentName}</p>
+                    <p><span class="font-medium">保護者氏名:</span> ${application.parentName}</p>
+                    <p><span class="font-medium">面談形式:</span> ${application.threeWayMeeting ? '三者面談' : '二者面談'}</p>
+                    ${application.preferences.length > 0 ? `
+                    <div>
+                        <span class="font-medium">希望日程:</span>
+                        <ul class="mt-1 ml-4">
+                            ${application.preferences.map(p => 
+                                `<li>第${p.preference}希望: ${p.slot.dateStr} ${p.slot.timeStr}</li>`
+                            ).join('')}
+                        </ul>
+                    </div>
+                    ` : ''}
+                    ${application.otherSchedule ? `<p><span class="font-medium">その他の日程:</span> ${application.otherSchedule}</p>` : ''}
+                    ${application.comments ? `<p><span class="font-medium">連絡事項:</span> ${application.comments}</p>` : ''}
+                </div>
+            `;
+        }
+
+        // 申込修正
+        function editApplication() {
+            document.getElementById('confirmationScreen').classList.add('hidden');
+            document.getElementById('parentForm').classList.remove('hidden');
+            
+            // フォームに現在の申込内容を復元
+            if (currentApplication) {
+                document.getElementById('studentName').value = currentApplication.studentName;
+                document.getElementById('parentName').value = currentApplication.parentName;
+                document.getElementById('threeWayMeeting').checked = currentApplication.threeWayMeeting;
+                document.getElementById('comments').value = currentApplication.comments || '';
+                document.getElementById('otherSchedule').value = currentApplication.otherSchedule || '';
+                
+                // 希望日程を復元
+                currentApplication.preferences.forEach(pref => {
+                    const radio = document.querySelector(`input[name="preference_${pref.slotId}"][value="${pref.preference}"]`);
+                    if (radio) {
+                        radio.checked = true;
+                        radio.dataset.wasChecked = 'true';
+                    }
+                });
+            }
+        }
+
+        // 修正フォーム表示
+        function showEditForm() {
+            if (applications.length === 0) {
+                alert('まだ申込がありません');
+                return;
+            }
+            
+            const studentName = prompt('修正したい生徒の氏名を入力してください:');
+            if (!studentName) return;
+            
+            const application = applications.find(app => app.studentName === studentName);
+            if (!application) {
+                alert('該当する申込が見つかりません');
+                return;
+            }
+            
+            currentApplication = application;
+            editApplication();
+        }
+
+        // フォームリセット
+        function resetForm() {
+            document.getElementById('confirmationScreen').classList.add('hidden');
+            document.getElementById('parentForm').classList.remove('hidden');
+            
+            // フォームクリア
+            document.getElementById('studentName').value = '';
+            document.getElementById('parentName').value = '';
+            document.getElementById('threeWayMeeting').checked = false;
+            document.getElementById('comments').value = '';
+            document.getElementById('otherSchedule').value = '';
+            
+            // ラジオボタンクリア
+            document.querySelectorAll('input[type="radio"]').forEach(radio => {
+                radio.checked = false;
+                radio.dataset.wasChecked = 'false';
+            });
+            
+            clearPreferenceError();
+            
+            currentApplication = null;
+        }
+
+        // 担任用日程表更新
+        function updateTeacherScheduleTable() {
+            const tbody = document.getElementById('teacherScheduleTableBody');
+            
+            if (applications.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="border border-gray-300 px-4 py-8 text-center text-gray-500">
+                            まだ申込がありません
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            const rows = [];
+            applications.forEach(app => {
+                app.preferences.forEach(pref => {
+                    rows.push({
+                        datetime: `${pref.slot.dateStr} ${pref.slot.timeStr}`,
+                        studentName: app.studentName,
+                        parentName: app.parentName,
+                        meetingType: app.threeWayMeeting ? '三者面談' : '二者面談',
+                        preference: `第${pref.preference}希望`,
+                        sortKey: `${pref.slot.date}_${pref.slot.time}_${pref.preference}`
+                    });
+                });
+            });
+
+            rows.sort((a, b) => a.sortKey.localeCompare(b.sortKey));
+
+            tbody.innerHTML = rows.map(row => `
+                <tr class="hover:bg-gray-50">
+                    <td class="border border-gray-300 px-4 py-3">${row.datetime}</td>
+                    <td class="border border-gray-300 px-4 py-3">${row.studentName}</td>
+                    <td class="border border-gray-300 px-4 py-3">${row.parentName}</td>
+                    <td class="border border-gray-300 px-4 py-3">${row.meetingType}</td>
+                    <td class="border border-gray-300 px-4 py-3">
+                        <span class="px-2 py-1 text-xs rounded-full ${
+                            row.preference === '第1希望' ? 'bg-red-100 text-red-800' :
+                            row.preference === '第2希望' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-green-100 text-green-800'
+                        }">${row.preference}</span>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // 相談内容一覧更新
+        function updateConsultationList() {
+            const container = document.getElementById('consultationContent');
+            
+            const consultations = applications.filter(app => app.comments && app.comments.trim() !== '');
+            
+            if (consultations.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center py-8">まだ相談内容の記載がある申込がありません</p>';
+                return;
+            }
+
+            container.innerHTML = consultations.map(app => `
+                <div class="bg-white border border-gray-200 rounded-lg p-4">
+                    <div class="flex justify-between items-start mb-3">
+                        <div>
+                            <h5 class="font-semibold text-gray-800">${app.studentName}</h5>
+                            <p class="text-sm text-gray-600">保護者: ${app.parentName}</p>
+                            <p class="text-sm text-gray-600">面談形式: ${app.threeWayMeeting ? '三者面談' : '二者面談'}</p>
+                        </div>
+                        <div class="text-xs text-gray-500">
+                            ${app.submittedAt.toLocaleDateString('ja-JP')} ${app.submittedAt.toLocaleTimeString('ja-JP', {hour: '2-digit', minute: '2-digit'})}
+                        </div>
+                    </div>
+                    <div class="bg-blue-50 border-l-4 border-blue-400 p-3 rounded">
+                        <h6 class="text-sm font-medium text-blue-800 mb-1">相談内容・連絡事項</h6>
+                        <p class="text-sm text-blue-700">${app.comments}</p>
+                    </div>
+                    <div class="mt-3 space-y-2">
+                        ${app.preferences.length > 0 ? `
+                        <div>
+                            <h6 class="text-sm font-medium text-gray-700 mb-1">希望日程</h6>
+                            <div class="text-sm text-gray-600">
+                                ${app.preferences.map(pref => 
+                                    `第${pref.preference}希望: ${pref.slot.dateStr} ${pref.slot.timeStr}`
+                                ).join(' / ')}
+                            </div>
+                        </div>
+                        ` : ''}
+                        ${app.otherSchedule ? `
+                        <div>
+                            <h6 class="text-sm font-medium text-gray-700 mb-1">その他の希望日程</h6>
+                            <div class="text-sm text-gray-600 bg-yellow-50 border border-yellow-200 rounded p-2">
+                                ${app.otherSchedule}
+                            </div>
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 初期化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初期状態では何も追加しない（手動で追加してもらう）
+            console.log('面談日程調整システムが初期化されました');
+        });
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'968a9d7d8768e029',t:'MTc1NDEwNjY3MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
